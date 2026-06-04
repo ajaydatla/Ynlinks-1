@@ -25,7 +25,7 @@ export default function SignUpPage() {
           </div>
 
           {/* Clerk Form */}
-          <SignUp />
+          <SignUp forceRedirectUrl="/onboarding/username" />
         </div>
       </div>
 

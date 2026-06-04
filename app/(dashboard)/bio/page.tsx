@@ -56,8 +56,6 @@ export default function BioPage() {
   const profile = useQuery(api.users.getUserByClerkId, { clerkId: user?.id || '' });
   const userLinks = useQuery(api.links.getEnabledLinksByUser, { userId: profile?._id || '' });
   const updateProfileMutation = useMutation(api.users.updateUserProfile);
-  const createUserMutation = useMutation(api.users.createUser);
-  const [creatingUser, setCreatingUser] = useState(false);
 
   const bioLink = profile?.username
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/u/${profile.username}`
@@ -79,42 +77,6 @@ export default function BioPage() {
       if (profile.fontStyle) setSelectedFontStyle(profile.fontStyle as FontStyle);
     }
   }, [profile]);
-
-  useEffect(() => {
-    if (user && !profile && isLoaded && !creatingUser) {
-      setCreatingUser(true);
-
-      let generatedUsername = user.username;
-      let displayName = user.fullName || user.firstName || 'User';
-
-      if (!generatedUsername) {
-        const fullName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim();
-
-        if (fullName && fullName !== 'User') {
-          generatedUsername = fullName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        } else if (user.primaryEmailAddress?.emailAddress) {
-          generatedUsername = user.primaryEmailAddress.emailAddress.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-        }
-      }
-
-      generatedUsername = (generatedUsername || 'user').replace(/[^a-zA-Z0-9_]/g, '');
-      const suffix = Math.random().toString(36).substring(2, 6);
-      generatedUsername = `${generatedUsername}_${suffix}`;
-
-      createUserMutation({
-        clerkId: user.id,
-        username: generatedUsername,
-        email: user.primaryEmailAddress?.emailAddress || '',
-        displayName: displayName,
-        avatarUrl: user.imageUrl || '',
-      }).then(() => {
-        setTimeout(() => setCreatingUser(false), 2000);
-      }).catch((err) => {
-        console.error('Failed to create user:', err);
-        setCreatingUser(false);
-      });
-    }
-  }, [user, profile, isLoaded, creatingUser, createUserMutation]);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(bioLink);

@@ -27,6 +27,8 @@ export default defineSchema({
     pageVisible: v.optional(v.boolean()),
     showBranding: v.optional(v.boolean()),
     allowIndexing: v.optional(v.boolean()),
+    // Onboarding
+    onboardingComplete: v.optional(v.boolean()),
     // Social links
     facebookUrl: v.optional(v.string()),
     instagramUrl: v.optional(v.string()),

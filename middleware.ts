@@ -20,14 +20,9 @@ export default clerkMiddleware({
     '/niches/games',
     '/niches/jobs',
     '/niches/affiliate',
-    '/api/webhooks/clerk',
-    '/api/clerk-webhook',
     '/favicon.ico',
   ],
-  ignoredRoutes: [
-    '/api/webhooks/clerk',
-    '/api/clerk-webhook',
-  ],
+  ignoredRoutes: [],
 });
 
 export const config = {

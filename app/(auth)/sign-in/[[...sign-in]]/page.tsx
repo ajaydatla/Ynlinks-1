@@ -113,8 +113,7 @@ export default function SignInPage() {
           </div>
 
           {/* Clerk Form */}
-          <SignIn
-           />
+          <SignIn forceRedirectUrl="/onboarding/username" />
         </div>
       </div>
 

@@ -9,6 +9,13 @@ export const getUserByUsername = query({
       .withIndex('by_username', (q) => q.eq('username', args.username))
       .first();
 
+    if (!user) return null;
+
+    // Hide placeholder / incomplete-onboarding users from the public profile page
+    if (user.username?.startsWith('pending_') || user.onboardingComplete === false) {
+      return null;
+    }
+
     return user;
   },
 });
@@ -87,12 +94,31 @@ export const updateUserProfile = mutation({
     theme: v.optional(v.string()),
     buttonStyle: v.optional(v.string()),
     fontStyle: v.optional(v.string()),
+    username: v.optional(v.string()),
+    niche: v.optional(v.string()),
+    onboardingComplete: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { userId, ...updates } = args;
+    const { userId, username, ...updates } = args;
+
+    if (username) {
+      const existing = await ctx.db
+        .query('users')
+        .withIndex('by_username', (q) => q.eq('username', username))
+        .first();
+
+      if (existing && existing._id !== userId) {
+        throw new Error('Username is already taken');
+      }
+    }
+
     const filteredUpdates = Object.fromEntries(
       Object.entries(updates).filter(([, value]) => value !== undefined)
     );
+
+    if (username) {
+      filteredUpdates.username = username;
+    }
 
     await ctx.db.patch(userId, filteredUpdates);
     return { success: true };

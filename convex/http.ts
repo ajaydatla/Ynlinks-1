@@ -10,10 +10,8 @@ const handle = httpRouter({
     if (type === 'user.created') {
       const { id: clerkId, email_addresses, first_name, last_name, image_url } = data;
       const primaryEmail = email_addresses[0]?.email_address || '';
-      const username = primaryEmail.split('@')[0] || `user_${Date.now()}`;
-      const timestamp = Date.now().toString().slice(-4);
-      const uniqueUsername = `${username}_${timestamp}`;
-      const displayName = [first_name, last_name].filter(Boolean).join(' ') || username;
+      const emailPrefix = primaryEmail.split('@')[0] || `user`;
+      const displayName = [first_name, last_name].filter(Boolean).join(' ') || emailPrefix;
 
       const existingUser = await ctx.db
         .query('users')
@@ -21,9 +19,12 @@ const handle = httpRouter({
         .first();
 
       if (!existingUser) {
+        // Placeholder username — the /onboarding/username step will overwrite it.
+        const placeholderUsername = `pending_${clerkId.slice(-8)}`;
+
         await ctx.db.insert('users', {
           clerkId,
-          username: uniqueUsername,
+          username: placeholderUsername,
           email: primaryEmail,
           displayName,
           avatarUrl: image_url,
@@ -32,6 +33,7 @@ const handle = httpRouter({
           balance: 0,
           status: 'active',
           role: 'creator',
+          onboardingComplete: false,
         });
       }
     }

@@ -56,7 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'My Bio Page', href: '/bio', icon: Layers },
+    { name: 'My Page', href: '/bio', icon: Layers },
     { name: 'Links', href: '/links', icon: Link2 },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Withdrawals', href: '/withdrawals', icon: Wallet },
