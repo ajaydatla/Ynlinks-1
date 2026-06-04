@@ -9,12 +9,20 @@ import { api } from '@/convex/_generated/api';
 import {
   Layers, LayoutDashboard, Link2, BarChart3, Wallet,
   User, HelpCircle, ChevronLeft, Menu, X, FileText, LogOut,
+  ChevronDown, Palette,
 } from 'lucide-react';
 import { TermsModal } from '@/components/TermsModal';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
+
+type NavItem = {
+  name: string;
+  href?: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  children?: { name: string; href: string; icon: React.ComponentType<{ size?: number; className?: string }> }[];
+};
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, isLoaded } = useUser();
@@ -26,6 +34,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [myPageOpen, setMyPageOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -54,10 +63,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setMobileOpen(false);
   }, [pathname]);
 
-  const navigation = [
+  const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'My Page', href: '/bio', icon: Layers },
-    { name: 'Links', href: '/links', icon: Link2 },
+    {
+      name: 'My Page',
+      icon: Layers,
+      children: [
+        { name: 'Links', href: '/links', icon: Link2 },
+        { name: 'Design', href: '/design', icon: Palette },
+      ],
+    },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Withdrawals', href: '/withdrawals', icon: Wallet },
     { name: 'Settings', href: '/settings', icon: User },
@@ -65,10 +80,129 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const isActive = (href: string) => pathname === href;
 
+  // Auto-expand the "My Page" accordion whenever the user is on one of its child pages.
+  // 'navigation' is a static const; we read it without adding it to deps to avoid a
+  // re-run on every render.
+  useEffect(() => {
+    const myPageItem = navigation.find((item) => item.name === 'My Page' && item.children);
+    if (myPageItem?.children?.some((child) => pathname === child.href)) {
+      setMyPageOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const displayName = profile?.displayName || user?.fullName || 'User';
   const username = profile?.username || user?.username || 'user';
   const avatarLetter = displayName.charAt(0).toUpperCase();
   const balance = (profile?.balance || profile?.earnings || 0).toFixed(2);
+
+  // ── Renders a single flat nav link ──
+  const renderLink = (item: NavItem) => {
+    if (!item.href) return null;
+    const active = isActive(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        title={collapsed ? item.name : undefined}
+        className={`
+          flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+          transition-all duration-150 group
+          ${collapsed ? 'justify-center' : ''}
+          ${active
+            ? 'bg-[#2EE6A6]/10 text-[#111111]'
+            : 'text-gray-500 hover:bg-gray-100 hover:text-[#111111]'
+          }
+        `}
+      >
+        <item.icon
+          size={19}
+          className={`flex-shrink-0 transition-colors ${active ? 'text-[#2EE6A6]' : 'text-gray-400 group-hover:text-gray-600'}`}
+        />
+        {!collapsed && <span className="truncate">{item.name}</span>}
+        {active && !collapsed && (
+          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#2EE6A6]" />
+        )}
+      </Link>
+    );
+  };
+
+  // ── Renders an accordion section (parent + collapsible children) ──
+  const renderSection = (item: NavItem) => {
+    if (!item.children) return null;
+    const childActive = item.children.some((child) => pathname === child.href);
+    const isOpen = myPageOpen || childActive; // open if user toggled it OR a child is active
+    const showChildren = isOpen && !collapsed; // collapsed sidebar → no children shown
+
+    return (
+      <div key={item.name} className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => setMyPageOpen((prev) => !prev)}
+          title={collapsed ? item.name : undefined}
+          className={`
+            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+            transition-all duration-150 group
+            ${collapsed ? 'justify-center' : ''}
+            ${childActive
+              ? 'bg-[#2EE6A6]/10 text-[#111111]'
+              : 'text-gray-500 hover:bg-gray-100 hover:text-[#111111]'
+            }
+          `}
+        >
+          <item.icon
+            size={19}
+            className={`flex-shrink-0 transition-colors ${childActive ? 'text-[#2EE6A6]' : 'text-gray-400 group-hover:text-gray-600'}`}
+          />
+          {!collapsed && <span className="truncate flex-1 text-left">{item.name}</span>}
+          {!collapsed && (
+            <ChevronDown
+              size={16}
+              className={`flex-shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          )}
+        </button>
+
+        {/* Children — smooth height transition via grid trick */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            showChildren ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="space-y-0.5 pt-0.5 pb-1">
+              {item.children.map((child) => {
+                const active = isActive(child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={`
+                      flex items-center gap-3 pl-11 pr-3 py-2 rounded-xl text-sm font-medium
+                      transition-all duration-150 group
+                      ${active
+                        ? 'bg-[#2EE6A6]/10 text-[#111111]'
+                        : 'text-gray-500 hover:bg-gray-100 hover:text-[#111111]'
+                      }
+                    `}
+                  >
+                    <child.icon
+                      size={17}
+                      className={`flex-shrink-0 transition-colors ${active ? 'text-[#2EE6A6]' : 'text-gray-400 group-hover:text-gray-600'}`}
+                    />
+                    <span className="truncate">{child.name}</span>
+                    {active && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#2EE6A6]" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Loading state
   if (!isLoaded) {
@@ -177,36 +311,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Nav links */}
           <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-            {navigation.map(({ name, href, icon: Icon }) => {
-              const active = isActive(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  title={collapsed ? name : undefined}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                    transition-all duration-150 group
-                    ${collapsed ? 'justify-center' : ''}
-                    ${active
-                      ? 'bg-[#2EE6A6]/10 text-[#111111]'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-[#111111]'
-                    }
-                  `}
-                >
-                  <Icon
-                    size={19}
-                    className={`flex-shrink-0 transition-colors ${active ? 'text-[#2EE6A6]' : 'text-gray-400 group-hover:text-gray-600'}`}
-                  />
-                  {!collapsed && (
-                    <span className="truncate">{name}</span>
-                  )}
-                  {/* Active dot */}
-                  {active && !collapsed && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#2EE6A6]" />
-                  )}
-                </Link>
-              );
+            {navigation.map((item) => {
+              // ── Section with children (accordion) ──
+              if (item.children) {
+                return renderSection(item);
+              }
+              // ── Flat link ──
+              return renderLink(item);
             })}
           </nav>
 
