@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { Facebook, Instagram, Linkedin, Twitter, Youtube, User } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Twitter, Youtube, User, Share2, Check } from 'lucide-react';
 
 const themeStyles = {
   'warm-ink': {
@@ -114,13 +114,16 @@ function ProfileContent({
   visibleLinks,
   buttonStyle,
   currentTheme,
+  shareUrl,
 }: {
   creatorData: UserData | null;
   visibleLinks: Link[];
   buttonStyle: ButtonStyle;
   currentTheme: typeof themeStyles['warm-ink'];
+  shareUrl: string;
 }) {
   const trackClickMutation = useMutation(api.links.incrementLinkClicks);
+  const [copied, setCopied] = useState(false);
 
   const socialLinks = [
     { name: 'Facebook', url: creatorData?.facebookUrl, icon: Facebook },
@@ -138,6 +141,28 @@ function ProfileContent({
       }).catch(console.error);
     }
     window.location.href = linkUrl;
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: creatorData?.displayName || creatorData?.username,
+          text: `Check out ${creatorData?.displayName || creatorData?.username}'s links!`,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy link');
+      }
+    }
   };
 
   return (
@@ -323,6 +348,7 @@ export default function PublicProfilePage() {
               visibleLinks={visibleLinks}
               buttonStyle={buttonStyle}
               currentTheme={currentTheme}
+              shareUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/u/${creatorData.username}`}
             />
           </div>
 
@@ -332,7 +358,26 @@ export default function PublicProfilePage() {
       </div>
 
       {/* Mobile: Full-width content */}
-      <div className="sm:hidden w-full max-w-md">
+      <div className="sm:hidden w-full max-w-md relative">
+        {/* Mobile Share Button - Top Right */}
+        <button
+          onClick={() => {
+            const shareUrl = `${window.location.origin}/u/${creatorData.username}`;
+            if (navigator.share) {
+              navigator.share({
+                title: creatorData.displayName || creatorData.username,
+                text: `Check out ${creatorData.displayName || creatorData.username}'s links!`,
+                url: shareUrl,
+              }).catch(() => {});
+            } else {
+              navigator.clipboard.writeText(shareUrl);
+            }
+          }}
+          className={`absolute top-4 right-4 z-10 w-10 h-10 ${currentTheme.cardBg} border ${currentTheme.border} rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all`}
+        >
+          <Share2 size={18} className={currentTheme.text} />
+        </button>
+
         <div className={`rounded-2xl overflow-hidden bg-gradient-to-b ${currentTheme.bg} ${fontFamilies[fontStyle]}`}>
           <div className="px-4 py-8">
             <ProfileContent
@@ -340,6 +385,7 @@ export default function PublicProfilePage() {
               visibleLinks={visibleLinks}
               buttonStyle={buttonStyle}
               currentTheme={currentTheme}
+              shareUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/u/${creatorData.username}`}
             />
           </div>
         </div>
