@@ -252,7 +252,7 @@ export default function LinksPage() {
         </div>
 
         {/* 2-Column Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
           {/* Left Column - Links List */}
           <div className="space-y-5">
             {/* Search & Filters */}
@@ -321,7 +321,7 @@ export default function LinksPage() {
               {activeLinks.length > 0 && (
                 <div>
                   {/* Section Divider with Badge */}
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3 mb-5">
                     <div className="flex-1 h-px bg-gray-200"></div>
                     <span className="px-3 py-1 bg-[#F5F0E8] text-[#6B7280] text-xs font-semibold rounded-full">
                       ALL LINKS
@@ -462,7 +462,7 @@ export default function LinksPage() {
           </div> */}
 
           <div className="hidden lg:block">
-            <div className="sticky top-4">
+            <div className="sticky top-6">
               <BioPreview
                 avatarUrl={profile?.avatarUrl || ''}
                 displayName={profile?.displayName || profile?.username || ''}
@@ -484,7 +484,7 @@ export default function LinksPage() {
       </div>
 
       {/* Mobile Preview Toggle */}
-      <div className="xl:hidden fixed bottom-6 right-6 z-50">
+      <div className="lg:hidden fixed bottom-6 right-6 z-50">
         <button
           onClick={() => {
             const preview = document.getElementById('mobile-links-preview');
