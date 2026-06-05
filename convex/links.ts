@@ -23,7 +23,10 @@ export const getEnabledLinksByUser = query({
       )
       .collect();
 
-    return links.sort((a, b) => a.orderIndex - b.orderIndex);
+    // Archived links must be hidden from the public profile, even if enabled.
+    return links
+      .filter((l) => l.archived !== true)
+      .sort((a, b) => a.orderIndex - b.orderIndex);
   },
 });
 

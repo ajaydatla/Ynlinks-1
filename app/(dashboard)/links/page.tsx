@@ -5,7 +5,8 @@ import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
-import { Plus, X, GripVertical, Edit,  Trash2, BarChart3, Image as ImageIcon, Link2, Search, Pin, Copy, ChevronDown, Share2, ExternalLink, Archive } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, X, GripVertical, Edit,  Trash2, BarChart3, Image as ImageIcon, Link2, Search, Pin, Copy, ChevronDown, ChevronRight, Share2, ExternalLink, Archive, Facebook, Instagram, Linkedin, Twitter, Youtube, Pencil, Activity } from 'lucide-react';
 import { BioPreview } from '@/components/BioPreview';
 
 interface Link {
@@ -27,6 +28,7 @@ interface Link {
 
 export default function LinksPage() {
   const { user, isLoaded } = useUser();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [editingLink, setEditingLink] = useState<Link | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,7 @@ export default function LinksPage() {
   const [dragOverItem, setDragOverItem] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     url: '',
@@ -50,7 +53,6 @@ export default function LinksPage() {
   const createLinkMutation = useMutation(api.links.createLink);
   const updateLinkMutation = useMutation(api.links.updateLink);
   const deleteLinkMutation = useMutation(api.links.deleteLink);
-  const toggleLinkMutation = useMutation(api.links.toggleLinkEnabled);
   const toggleLinkArchivedMutation = useMutation(api.links.toggleLinkArchived);
   const toggleLinkPinnedMutation = useMutation(api.links.toggleLinkPinned);
   const reorderLinksMutation = useMutation(api.links.reorderLinks);
@@ -142,14 +144,6 @@ export default function LinksPage() {
     }
   };
 
-  const handleToggle = async (linkId: string, currentEnabled: boolean) => {
-    try {
-      await toggleLinkMutation({ linkId: linkId as any, enabled: !currentEnabled });
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
-
   const handleDelete = async (linkId: string) => {
     if (!confirm('Are you sure you want to delete this link?')) return;
     try {
@@ -159,17 +153,20 @@ export default function LinksPage() {
     }
   };
 
-  const handleArchive = async (linkId: string, currentArchived: boolean) => {
+  // `archived` argument is the NEXT state (true = archive, false = restore).
+  // Pass it through directly — do NOT invert it again here.
+  const handleArchive = async (linkId: string, archived: boolean) => {
     try {
-      await toggleLinkArchivedMutation({ linkId: linkId as any, archived: !currentArchived });
+      await toggleLinkArchivedMutation({ linkId: linkId as any, archived });
     } catch (error: any) {
       alert(error.message);
     }
   };
 
-  const handlePin = async (linkId: string, currentPinned: boolean) => {
+  // `pinned` argument is the NEXT state. Pass it through directly.
+  const handlePin = async (linkId: string, pinned: boolean) => {
     try {
-      await toggleLinkPinnedMutation({ linkId: linkId as any, pinned: !currentPinned });
+      await toggleLinkPinnedMutation({ linkId: linkId as any, pinned });
     } catch (error: any) {
       alert(error.message);
     }
@@ -230,7 +227,7 @@ export default function LinksPage() {
     <div className="min-h-screen ">
       <div className="max-w-6xl mx-auto ">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-serif font-bold text-[#111111]">Links</h1>
             <p className="text-sm text-[#6B7280] mt-0.5">Manage and organize your public links</p>
@@ -249,35 +246,164 @@ export default function LinksPage() {
               Add Link
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
           {/* Left Column - Links List */}
           <div className="space-y-5">
-            {/* Search & Filters */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 relative max-w-sm">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search links..."
-                  className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2EE6A6] focus:border-transparent"
-                />
+            {/* Profile Summary Card — horizontal layout */}
+            <div className="bg-cream rounded-2xl border border-gray-200 p-6 shadow-sm">
+              {/* Top: avatar (left) + name/bio/socials (right) */}
+              <div className="flex items-start gap-4">
+                {/* Avatar with green edit badge */}
+                <div className="relative flex-shrink-0">
+                  {profile?.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt={profile?.displayName || profile?.username || ''}
+                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] flex items-center justify-center border-4 border-white shadow-md">
+                      <span className="text-3xl font-bold text-white">
+                        {(profile?.displayName || profile?.username || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => router.push('/design')}
+                    className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#2EE6A6] border-2 border-white flex items-center justify-center shadow-md hover:bg-[#1FD695] transition-colors"
+                    title="Edit profile"
+                  >
+                    <Pencil size={12} className="text-white" />
+                  </button>
+                </div>
+
+                {/* Name + bio + socials */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-[#111111] truncate">
+                    {profile?.displayName || profile?.username || 'Your Name'}
+                  </h2>
+                  <p className="text-sm text-[#6B7280] truncate">
+                    @{profile?.username || 'username'}
+                  </p>
+                  {profile?.bio && (
+                    <p className="text-xs  tracking-wider text-[#6B7280] mt-1.5 line-clamp-2">
+                      {profile.bio}
+                    </p>
+                  )}
+
+                  {/* Social icons row (set slots) + Add slot at the end */}
+                  <div className="flex items-center gap-2 mt-3">
+                    {profile?.instagramUrl && (
+                      <a
+                        href={profile.instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-600 flex items-center justify-center transition-colors"
+                        title="Instagram"
+                      >
+                        <Instagram size={13} />
+                      </a>
+                    )}
+                    {profile?.youtubeUrl && (
+                      <a
+                        href={profile.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-600 flex items-center justify-center transition-colors"
+                        title="YouTube"
+                      >
+                        <Youtube size={13} />
+                      </a>
+                    )}
+                    {profile?.facebookUrl && (
+                      <a
+                        href={profile.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-600 flex items-center justify-center transition-colors"
+                        title="Facebook"
+                      >
+                        <Facebook size={13} />
+                      </a>
+                    )}
+                    {profile?.twitterUrl && (
+                      <a
+                        href={profile.twitterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-600 flex items-center justify-center transition-colors"
+                        title="X / Twitter"
+                      >
+                        <Twitter size={13} />
+                      </a>
+                    )}
+                    {profile?.linkedinUrl && (
+                      <a
+                        href={profile.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-600 flex items-center justify-center transition-colors"
+                        title="LinkedIn"
+                      >
+                        <Linkedin size={13} />
+                      </a>
+                    )}
+                    {/* Trailing + slot — opens social editor on the design page */}
+                    <button
+                      type="button"
+                      onClick={() => router.push('/design')}
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-500 flex items-center justify-center transition-colors"
+                      title="Add social link"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-[#111111] hover:border-gray-300 transition-colors flex items-center gap-1.5">
-                Order: Custom
-                <ChevronDown size={14} />
+
+              {/* Centered, wide "+ Add Link" button — emerald */}
+              <button
+                type="button"
+                onClick={() => handleOpenModal()}
+                disabled={links.filter(l => !l.archived).length >= 5}
+                className={`mt-5 w-full py-2 rounded-full font-semibold text-base flex items-center justify-center gap-2 transition-all ${
+                  links.filter(l => !l.archived).length >= 5
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#2EE6A6] text-white hover:bg-[#1FD695] shadow-sm'
+                }`}
+              >
+                <Plus size={17} />
+                Add
               </button>
-              <button className="p-2.5 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-              </button>
+
+              {/* Bottom row: Add collection (decorative) + View archive */}
+              <div className="flex items-center justify-between mt-4">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7280] hover:text-[#111111] transition-colors"
+                  title="Coming soon"
+                >
+                  <Plus size={14} />
+                  Add collection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowArchiveModal(true)}
+                  disabled={archivedLinks.length === 0}
+                  className={`inline-flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                    archivedLinks.length === 0
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-[#2EE6A6] hover:text-[#1FD695]'
+                  }`}
+                >
+                  View archive
+                  <ChevronRight size={14} />
+                </button>
+              </div>
             </div>
 
             {/* Links Sections */}
@@ -300,7 +426,6 @@ export default function LinksPage() {
                         key={link._id}
                         link={link}
                         onEdit={handleOpenModal}
-                        onToggle={handleToggle}
                         onDelete={handleDelete}
                         onArchive={handleArchive}
                         onPin={handlePin}
@@ -334,7 +459,6 @@ export default function LinksPage() {
                         key={link._id}
                         link={link}
                         onEdit={handleOpenModal}
-                        onToggle={handleToggle}
                         onDelete={handleDelete}
                         onArchive={handleArchive}
                         onPin={handlePin}
@@ -347,47 +471,6 @@ export default function LinksPage() {
                       />
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Archived Links Toggle */}
-              {archivedLinks.length > 0 && (
-                <div>
-                  {/* Section Divider with Badge */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex-1 h-px bg-gray-200"></div>
-                    <button
-                      onClick={() => setShowArchived(!showArchived)}
-                      className="px-3 py-1 bg-gray-100 text-[#6B7280] text-xs font-semibold rounded-full flex items-center gap-1.5 hover:bg-gray-200 transition-colors"
-                    >
-                      <Archive size={11} />
-                      {archivedLinks.length} Archived
-                      <ChevronDown size={11} className={`transition-transform ${showArchived ? 'rotate-180' : ''}`} />
-                    </button>
-                    <div className="flex-1 h-px bg-gray-200"></div>
-                  </div>
-                  {showArchived && (
-                    <div className="space-y-2">
-                      {archivedLinks.map((link) => (
-                        <LinkCard
-                          key={link._id}
-                          link={link}
-                          onEdit={handleOpenModal}
-                          onToggle={handleToggle}
-                          onDelete={handleDelete}
-                          onArchive={handleArchive}
-                          onPin={handlePin}
-                          onCopy={copyLink}
-                          onDragStart={handleDragStart}
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
-                          draggedItem={draggedItem}
-                          dragOverItem={dragOverItem}
-                          isArchived
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -536,6 +619,59 @@ export default function LinksPage() {
         </div>
       </div>
 
+      {/* Archive Modal */}
+      {showArchiveModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-[#111111]">Archived Links</h2>
+                <p className="text-xs text-[#6B7280] mt-0.5">
+                  {archivedLinks.length} {archivedLinks.length === 1 ? 'link' : 'links'} archived
+                </p>
+              </div>
+              <button
+                onClick={() => setShowArchiveModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            {/* Body — scrollable list of archived LinkCards */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {archivedLinks.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Archive size={24} className="text-gray-400" />
+                  </div>
+                  <p className="text-sm text-[#6B7280]">No archived links</p>
+                </div>
+              ) : (
+                archivedLinks.map((link) => (
+                  <LinkCard
+                    key={link._id}
+                    link={link}
+                    onEdit={handleOpenModal}
+                    onDelete={handleDelete}
+                    onArchive={handleArchive}
+                    onPin={handlePin}
+                    onCopy={copyLink}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggedItem={draggedItem}
+                    dragOverItem={dragOverItem}
+                    isArchived
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -655,7 +791,6 @@ export default function LinksPage() {
 function LinkCard({
   link,
   onEdit,
-  onToggle,
   onDelete,
   onCopy,
   onArchive,
@@ -670,7 +805,6 @@ function LinkCard({
 }: {
   link: Link;
   onEdit: (link: Link) => void;
-  onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
   onCopy: (url: string) => void;
   onArchive: (id: string, archived: boolean) => void;
@@ -683,15 +817,15 @@ function LinkCard({
   isArchived?: boolean;
   isPinned?: boolean;
 }) {
-  const getBadgeColor = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'new': return 'bg-green-100 text-green-700';
-      case 'hot': return 'bg-pink-100 text-pink-600';
-      case 'featured': return 'bg-gray-200 text-gray-600';
-      case 'paid': return 'bg-orange-100 text-orange-600';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
+  // Display hostname from the link URL for a clean look
+  const safeUrl = link.url || '';
+  let displayUrl = safeUrl;
+  try {
+    const u = new URL(safeUrl);
+    displayUrl = u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '');
+  } catch {
+    // not a parseable URL — fall back to the raw string
+  }
 
   return (
     <div
@@ -699,107 +833,126 @@ function LinkCard({
       onDragStart={(e) => onDragStart(e, link._id)}
       onDragOver={(e) => onDragOver(e, link._id)}
       onDrop={(e) => onDrop(e, link._id)}
-      className={`bg-white rounded-xl border transition-all ${isArchived ? 'opacity-60 bg-gray-50' :
+      className={`bg-white rounded-2xl border transition-all ${isArchived ? 'opacity-60 bg-gray-50' :
           isPinned ? 'border-[#111111] shadow' :
             draggedItem === link._id ? 'opacity-50 border-[#2EE6A6]' :
               dragOverItem === link._id ? 'border-[#2EE6A6]' :
                 'border-gray-200 hover:border-gray-300'
         }`}
     >
-      <div className="flex items-center gap-3 p-3">
+      {/* ── Top row: drag handle + thumbnail + title/url ── */}
+      <div className="flex items-start gap-3 p-4 pb-3">
         {/* Drag Handle */}
         {!isArchived && (
-          <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <div className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 pt-0.5">
             <GripVertical size={16} />
           </div>
         )}
 
         {/* Thumbnail */}
         {link.thumbnailUrl ? (
-          <div className="w-11 h-11 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
             <img src={link.thumbnailUrl} alt="" className="w-full h-full object-cover" />
           </div>
         ) : (
-          <div className="w-11 h-11 rounded-lg bg-[#2EE6A6]/10 flex items-center justify-center flex-shrink-0">
-            <Link2 size={18} className="text-[#2EE6A6]" />
+          <div className="w-10 h-10 rounded-lg bg-[#2EE6A6]/10 flex items-center justify-center flex-shrink-0">
+            <Link2 size={16} className="text-[#2EE6A6]" />
           </div>
         )}
 
-        {/* Link Info */}
+        {/* Title + URL */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-serif font-medium text-[#111111] text-sm">{link.title}</h3>
-            {link.type && (
-              <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded-full ${getBadgeColor(link.type)}`}>
-                {link.type.toUpperCase()}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-[10px] font-semibold text-[#111111]">₹{link.earned || 0}</span>
-            <span className="text-[10px] text-[#6B7280]">{link.ctr || 0}% CTR</span>
-            <span className="text-[10px] text-[#6B7280]">{link.clicks || 0} clicks</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-            {!isArchived && (
-              <>
-                <button
-                  onClick={() => onPin(link._id, !link.pinned)}
-                  className={`p-1.5 rounded-lg transition-colors ${link.pinned ? 'text-orange-500 bg-orange-100' : 'text-gray-400 hover:text-[#111111] hover:bg-gray-100'}`}
-                  title={link.pinned ? 'Unpin' : 'Pin'}
-                >
-                  <Pin size={14} />
-                </button>
-                <button
-                  onClick={() => onEdit(link)}
-                  className="p-1.5 text-gray-400 hover:text-[#111111] hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Edit size={14} />
-                </button>
-                <button
-                  onClick={() => onCopy(link.url)}
-                  className="p-1.5 text-gray-400 hover:text-[#111111] hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Copy size={14} />
-                </button>
-                {/* <button
-                  onClick={() => onToggle(link._id, link.enabled)}
-                  className={`p-1.5 rounded-lg transition-colors ${link.enabled ? 'text-[#111111] bg-[#111111]/10' : 'text-gray-400 bg-gray-100'}`}
-                >
-                  {link.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
-                </button> */}
-              </>
-            )}
-            {isArchived ? (
-              <button
-                onClick={() => onArchive(link._id, false)}
-                className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                title="Restore"
-              >
-                <Archive size={14} />
-              </button>
-            ) : (
-              <button
-                onClick={() => onArchive(link._id, true)}
-                className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
-                title="Archive"
-              >
-                <Archive size={14} />
-              </button>
-              
-            )}
-            <button
-              onClick={() => onDelete(link._id)}
-              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          <h3 className="font-medium text-[#111111] text-sm truncate leading-tight">
+            {link.title}
+          </h3>
+          <p className="text-xs text-[#6B7280] truncate mt-0.5">
+            {displayUrl}
+          </p>
         </div>
       </div>
-    // </div>
+
+      {/* ── Middle row: clicks badge + analytics + CTR % ── */}
+      <div className="flex items-center gap-3 px-4 pb-3">
+        {/* Clicks pill */}
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-full text-[11px] font-semibold text-[#111111]">
+          <BarChart3 size={11} className="text-gray-500" />
+          {link.clicks || 0} clicks
+        </span>
+        {link.earned ? (
+          <span className="text-[11px] text-[#6B7280] font-medium">
+            ₹{link.earned}
+          </span>
+        ) : null}
+
+        <div className="ml-auto flex-shrink-0">
+          {isArchived ? (
+            <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              ARCHIVED
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-full text-[11px] font-semibold text-[#111111]">
+              <Activity size={11} />
+              {link.ctr || 0}% CTR
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Bottom row: utility actions ── */}
+      <div className="flex items-center justify-start gap-0.5 px-3 py-2 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+        {!isArchived && (
+          <>
+            <button
+              onClick={() => onPin(link._id, !link.pinned)}
+              className={`p-1.5 rounded-lg transition-colors ${link.pinned
+                  ? 'text-orange-500 bg-orange-100'
+                  : 'text-gray-400 hover:text-[#111111] hover:bg-white'
+                }`}
+              title={link.pinned ? 'Unpin' : 'Pin'}
+            >
+              <Pin size={14} />
+            </button>
+            <button
+              onClick={() => onEdit(link)}
+              className="p-1.5 text-gray-400 hover:text-[#111111] hover:bg-white rounded-lg transition-colors"
+              title="Edit"
+            >
+              <Edit size={14} />
+            </button>
+            <button
+              onClick={() => onCopy(link.url)}
+              className="p-1.5 text-gray-400 hover:text-[#111111] hover:bg-white rounded-lg transition-colors"
+              title="Copy URL"
+            >
+              <Copy size={14} />
+            </button>
+          </>
+        )}
+        {isArchived ? (
+          <button
+            onClick={() => onArchive(link._id, false)}
+            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-white rounded-lg transition-colors"
+            title="Restore"
+          >
+            <Archive size={14} />
+          </button>
+        ) : (
+          <button
+            onClick={() => onArchive(link._id, true)}
+            className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-white rounded-lg transition-colors"
+            title="Archive"
+          >
+            <Archive size={14} />
+          </button>
+        )}
+        <button
+          onClick={() => onDelete(link._id)}
+          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors"
+          title="Delete"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
   );
 }
