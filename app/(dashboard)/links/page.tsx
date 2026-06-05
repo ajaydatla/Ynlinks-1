@@ -355,7 +355,7 @@ export default function LinksPage() {
                     {/* Trailing + slot — opens social editor on the design page */}
                     <button
                       type="button"
-                      onClick={() => router.push('/design')}
+                      onClick={() => router.push('/bio')}
                       className="w-8 h-8 rounded-full bg-gray-100 hover:bg-[#2EE6A6] hover:text-white text-gray-500 flex items-center justify-center transition-colors"
                       title="Add social link"
                     >

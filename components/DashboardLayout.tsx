@@ -65,6 +65,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Links', href: '/links', icon: Link2 },
     { name: 'Design', href: '/design', icon: Palette },
+    { name: 'Bio', href: '/bio', icon: Palette },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Withdrawals', href: '/withdrawals', icon: Wallet },
     { name: 'Settings', href: '/settings', icon: User },
