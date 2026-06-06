@@ -2,13 +2,14 @@
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { Check, Save, Sparkles } from 'lucide-react';
+import { Check, Save, Sparkles, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { BioPreview } from '@/components/BioPreview';
 
 type Theme = 'warm-ink' | 'pure' | 'forest' | 'ocean' | 'rose' | 'amber' | 'slate' | 'parchment';
 type ButtonStyle = 'pill' | 'rounded' | 'square' | 'sharp';
 type FontStyle = 'fraunces' | 'dm-sans' | 'georgia' | 'mono';
+type AvatarShape = 'circle' | 'rounded' | 'square' | 'hexagon' | 'none';
 
 const themes = [
   { id: 'warm-ink', name: 'Warm Ink', colors: ['#1a1a1a', '#2d2d2d'] },
@@ -35,6 +36,34 @@ const fontStyles = [
   { id: 'mono', name: 'Mono', family: 'monospace' },
 ] as const;
 
+const avatarShapes = [
+  {
+    id: 'circle' as AvatarShape,
+    name: 'Circle',
+    style: { borderRadius: '9999px' },
+  },
+  {
+    id: 'rounded' as AvatarShape,
+    name: 'Rounded',
+    style: { borderRadius: '24px' },
+  },
+  {
+    id: 'square' as AvatarShape,
+    name: 'Square',
+    style: { borderRadius: '0' },
+  },
+  {
+    id: 'hexagon' as AvatarShape,
+    name: 'Hexagon',
+    style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+  },
+  {
+    id: 'none' as AvatarShape,
+    name: 'None',
+    style: { display: 'none' },
+  },
+] as const;
+
 export default function BioPage() {
   const { user, isLoaded } = useUser();
   const [saving, setSaving] = useState(false);
@@ -42,6 +71,7 @@ export default function BioPage() {
   const [selectedTheme, setSelectedTheme] = useState<Theme>('parchment');
   const [selectedButtonStyle, setSelectedButtonStyle] = useState<ButtonStyle>('pill');
   const [selectedFontStyle, setSelectedFontStyle] = useState<FontStyle>('dm-sans');
+  const [selectedAvatarShape, setSelectedAvatarShape] = useState<AvatarShape>('circle');
 
   const profile = useQuery(api.users.getUserByClerkId, { clerkId: user?.id || '' });
   const userLinks = useQuery(api.links.getEnabledLinksByUser, { userId: profile?._id || '' });
@@ -52,6 +82,7 @@ export default function BioPage() {
       if (profile.theme) setSelectedTheme(profile.theme as Theme);
       if (profile.buttonStyle) setSelectedButtonStyle(profile.buttonStyle as ButtonStyle);
       if (profile.fontStyle) setSelectedFontStyle(profile.fontStyle as FontStyle);
+      if (profile.avatarShape) setSelectedAvatarShape(profile.avatarShape as AvatarShape);
     }
   }, [profile]);
 
@@ -64,6 +95,7 @@ export default function BioPage() {
         theme: selectedTheme,
         buttonStyle: selectedButtonStyle,
         fontStyle: selectedFontStyle,
+        avatarShape: selectedAvatarShape,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -191,6 +223,72 @@ export default function BioPage() {
         </div>
       </div>
 
+      {/* Header Customization card */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-6">
+          {/* <User size={18} className="text-[#2EE6A6]" /> */}
+          <h3 className="text-lg font-semibold text-[#111111]">Header Customization</h3>
+        </div>
+
+        {/* <label className="block text-sm font-bold text-[#111111] mb-3">
+          Avatar Shape
+        </label> */}
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+          {avatarShapes.map((shape) => {
+            const isSelected = selectedAvatarShape === shape.id;
+            const isNone = shape.id === 'none';
+            return (
+              <button
+                key={shape.id}
+                type="button"
+                onClick={() => setSelectedAvatarShape(shape.id)}
+                className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all bg-gray-50 hover:bg-gray-100 ${
+                  isSelected
+                    ? 'border-[#2EE6A6] bg-white/5 shadow-sm'
+                    : 'border-gray-200'
+                }`}
+              >
+                {/* Visual preview of the shape */}
+                {isNone ? (
+                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <span className="text-gray-400 text-xs">∅</span>
+                  </div>
+                ) : (
+                  <div
+                    className="w-12 h-12 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695]"
+                    style={shape.style as React.CSSProperties}
+                  />
+                )}
+                <span
+                  className={`text-xs font-semibold ${
+                    isSelected ? 'text-[#2EE6A6]' : 'text-[#111111]'
+                  }`}
+                >
+                  {shape.name}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-4 h-4 bg-[#2EE6A6] rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Save button */}
           <button
             type="button"
@@ -238,6 +336,7 @@ export default function BioPage() {
               theme={selectedTheme}
               buttonStyle={selectedButtonStyle}
               fontStyle={selectedFontStyle}
+              avatarShape={selectedAvatarShape}
             />
           </div>
         </div>
@@ -291,6 +390,7 @@ export default function BioPage() {
               theme={selectedTheme}
               buttonStyle={selectedButtonStyle}
               fontStyle={selectedFontStyle}
+              avatarShape={selectedAvatarShape}
             />
           </div>
         </div>

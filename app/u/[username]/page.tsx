@@ -72,6 +72,16 @@ const buttonStyles = {
   sharp: 'rounded-none',
 };
 
+// Inline style fragments for each avatar shape. 'none' is handled by the
+// caller (the avatar block is not rendered at all when shape === 'none').
+const avatarShapeStyles: Record<string, React.CSSProperties> = {
+  circle: { borderRadius: '9999px' },
+  rounded: { borderRadius: '24px' },
+  square: { borderRadius: '0' },
+  hexagon: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+  none: {},
+};
+
 const fontFamilies = {
   'fraunces': 'font-serif',
   'dm-sans': 'font-sans',
@@ -92,6 +102,7 @@ interface UserData {
   theme?: string;
   buttonStyle?: string;
   fontStyle?: string;
+  avatarShape?: string;
   facebookUrl?: string;
   instagramUrl?: string;
   linkedinUrl?: string;
@@ -115,12 +126,14 @@ function ProfileContent({
   buttonStyle,
   currentTheme,
   shareUrl,
+  avatarShape,
 }: {
   creatorData: UserData | null;
   visibleLinks: Link[];
   buttonStyle: ButtonStyle;
   currentTheme: typeof themeStyles['warm-ink'];
   shareUrl: string;
+  avatarShape: keyof typeof avatarShapeStyles;
 }) {
   const trackClickMutation = useMutation(api.links.incrementLinkClicks);
   const [copied, setCopied] = useState(false);
@@ -167,20 +180,26 @@ function ProfileContent({
 
   return (
     <>
-      {/* Avatar */}
-      <div className="flex justify-center mb-3">
-        {creatorData?.avatarUrl ? (
-          <img
-            src={creatorData.avatarUrl}
-            alt={creatorData.displayName || creatorData.username}
-            className="w-20 h-20 rounded-full object-cover border-2 border-white/20 shadow-lg"
-          />
-        ) : (
-          <div className="w-20 h-20 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] rounded-full flex items-center justify-center shadow-lg">
-            <User size={28} className="text-white" />
-          </div>
-        )}
-      </div>
+      {/* Avatar — shape driven by `avatarShape` (circle | rounded | square | hexagon | none) */}
+      {avatarShape !== 'none' && (
+        <div className="flex justify-center mb-3">
+          {creatorData?.avatarUrl ? (
+            <img
+              src={creatorData.avatarUrl}
+              alt={creatorData.displayName || creatorData.username}
+              className="w-20 h-20 object-cover border-2 border-white/20 shadow-lg"
+              style={avatarShapeStyles[avatarShape]}
+            />
+          ) : (
+            <div
+              className="w-20 h-20 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] flex items-center justify-center shadow-lg"
+              style={avatarShapeStyles[avatarShape]}
+            >
+              <User size={28} className="text-white" />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Name */}
       <h2 className={`${currentTheme.text} font-bold text-base text-center leading-tight`}>
@@ -272,6 +291,7 @@ export default function PublicProfilePage() {
   const theme = (creatorData?.theme as Theme) || 'parchment';
   const buttonStyle = (creatorData?.buttonStyle as ButtonStyle) || 'pill';
   const fontStyle = (creatorData?.fontStyle as FontStyle) || 'dm-sans';
+  const avatarShape = (creatorData?.avatarShape as keyof typeof avatarShapeStyles) || 'circle';
 
   const currentTheme = themeStyles[theme] || themeStyles['parchment'];
   const visibleLinks = creatorLinks?.filter(l => l.enabled !== false && l.archived !== true) || [];
@@ -349,6 +369,7 @@ export default function PublicProfilePage() {
               buttonStyle={buttonStyle}
               currentTheme={currentTheme}
               shareUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/u/${creatorData.username}`}
+              avatarShape={avatarShape}
             />
           </div>
 
@@ -386,6 +407,7 @@ export default function PublicProfilePage() {
               buttonStyle={buttonStyle}
               currentTheme={currentTheme}
               shareUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/u/${creatorData.username}`}
+              avatarShape={avatarShape}
             />
           </div>
         </div>

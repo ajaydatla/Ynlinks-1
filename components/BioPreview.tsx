@@ -30,6 +30,7 @@ interface BioPreviewProps {
   theme?: 'warm-ink' | 'pure' | 'forest' | 'ocean' | 'rose' | 'amber' | 'slate' | 'parchment';
   buttonStyle?: 'pill' | 'rounded' | 'square' | 'sharp';
   fontStyle?: 'fraunces' | 'dm-sans' | 'georgia' | 'mono';
+  avatarShape?: 'circle' | 'rounded' | 'square' | 'hexagon' | 'none';
 }
 
 const themeStyles = {
@@ -105,6 +106,16 @@ const fontFamilies = {
   'mono': 'font-mono',
 };
 
+// CSS style fragments for each avatar shape. 'none' = empty object (avatar
+// will be wrapped in a conditional, so it won't render at all).
+const avatarShapeStyles: Record<'circle' | 'rounded' | 'square' | 'hexagon' | 'none', React.CSSProperties> = {
+  circle: { borderRadius: '9999px' },
+  rounded: { borderRadius: '18px' },
+  square: { borderRadius: '0' },
+  hexagon: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+  none: {},
+};
+
 export function BioPreview({
   avatarUrl,
   displayName,
@@ -119,6 +130,7 @@ export function BioPreview({
   theme = 'parchment',
   buttonStyle = 'pill',
   fontStyle = 'dm-sans',
+  avatarShape = 'circle',
 }: BioPreviewProps) {
   const socialLinks = [
     {
@@ -172,20 +184,26 @@ export function BioPreview({
 
             {/* Scrollable Content */}
             <div className={`pt-8 px-3 pb-5 h-full overflow-y-auto scrollbar-hide ${fontFamilies[fontStyle]}`}>
-              {/* Avatar */}
-              <div className="mb-3 flex justify-center">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={displayName || username}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-md"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] rounded-full flex items-center justify-center shadow-md">
-                    <User size={26} className="text-white" />
-                  </div>
-                )}
-              </div>
+              {/* Avatar — shape driven by `avatarShape` prop. Hidden when 'none'. */}
+              {avatarShape !== 'none' && (
+                <div className="mb-3 flex justify-center">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={displayName || username}
+                      className="w-16 h-16 object-cover border-2 border-white/20 shadow-md"
+                      style={avatarShapeStyles[avatarShape]}
+                    />
+                  ) : (
+                    <div
+                      className="w-16 h-16 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] flex items-center justify-center shadow-md"
+                      style={avatarShapeStyles[avatarShape]}
+                    >
+                      <User size={26} className="text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Name */}
               <h2 className={`${currentTheme.text} font-bold text-[13px] text-center leading-tight`}>
@@ -237,11 +255,7 @@ export function BioPreview({
                 </div>
               )}
 
-              {/* Branding */}
-              <p className={`mt-3 text-center text-[9px] ${currentTheme.subtext}`}>
-                Powered by <span className="text-[#2EE6A6] font-medium">YNLinks</span>
-                {/* <span className="block">---------------</span> */}
-              </p>
+             
 
               {/* User Links */}
               {userLinks.filter(l => l.enabled !== false && l.archived !== true).length > 0 && (
@@ -266,6 +280,11 @@ export function BioPreview({
                   ))}
                 </div>
               )}
+               {/* Branding */}
+              <p className={`mt-3 text-center text-[9px] ${currentTheme.subtext}`}>
+                Powered by <span className="text-[#2EE6A6] font-medium">YNLinks</span>
+                {/* <span className="block">---------------</span> */}
+              </p>
             </div>
 
             {/* Home Bar */}

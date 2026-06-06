@@ -14,6 +14,7 @@ export default defineSchema({
     theme: v.optional(v.string()),
     buttonStyle: v.optional(v.string()),
     fontStyle: v.optional(v.string()),
+    avatarShape: v.optional(v.string()),
     isAdmin: v.boolean(),
     earnings: v.number(),
     socialPlatform: v.optional(v.string()),

@@ -94,6 +94,7 @@ export const updateUserProfile = mutation({
     theme: v.optional(v.string()),
     buttonStyle: v.optional(v.string()),
     fontStyle: v.optional(v.string()),
+    avatarShape: v.optional(v.string()),
     username: v.optional(v.string()),
     niche: v.optional(v.string()),
     onboardingComplete: v.optional(v.boolean()),

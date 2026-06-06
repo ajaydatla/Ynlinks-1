@@ -26,6 +26,16 @@ interface Link {
   ctr?: number;
 }
 
+// CSS style fragments for each avatar shape. Used by the profile card avatar
+// in this page (the live BioPreviews get the same value via their own prop).
+const avatarShapeStyles: Record<'circle' | 'rounded' | 'square' | 'hexagon' | 'none', React.CSSProperties> = {
+  circle: { borderRadius: '9999px' },
+  rounded: { borderRadius: '20px' },
+  square: { borderRadius: '0' },
+  hexagon: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+  none: {},
+};
+
 export default function LinksPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
@@ -256,21 +266,30 @@ export default function LinksPage() {
             <div className="bg-cream rounded-2xl border border-gray-200 p-6 shadow-sm">
               {/* Top: avatar (left) + name/bio/socials (right) */}
               <div className="flex items-start gap-4">
-                {/* Avatar with green edit badge */}
+                {/* Avatar with green edit badge — shape driven by saved `profile.avatarShape` */}
                 <div className="relative flex-shrink-0">
-                  {profile?.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile?.displayName || profile?.username || ''}
-                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] flex items-center justify-center border-4 border-white shadow-md">
-                      <span className="text-3xl font-bold text-white">
-                        {(profile?.displayName || profile?.username || 'U').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    const shape = (profile?.avatarShape as keyof typeof avatarShapeStyles) || 'circle';
+                    if (shape === 'none') return null;
+                    const style = avatarShapeStyles[shape];
+                    return profile?.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt={profile?.displayName || profile?.username || ''}
+                        className="w-20 h-20 object-cover border-4 border-white shadow-md"
+                        style={style}
+                      />
+                    ) : (
+                      <div
+                        className="w-20 h-20 bg-gradient-to-br from-[#2EE6A6] to-[#1FD695] flex items-center justify-center border-4 border-white shadow-md"
+                        style={style}
+                      >
+                        <span className="text-3xl font-bold text-white">
+                          {(profile?.displayName || profile?.username || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={() => router.push('/design')}
@@ -529,6 +548,7 @@ export default function LinksPage() {
                   theme={(profile?.theme as any) || 'parchment'}
                   buttonStyle={(profile?.buttonStyle as any) || 'pill'}
                   fontStyle={(profile?.fontStyle as any) || 'dm-sans'}
+                  avatarShape={(profile?.avatarShape as any) || 'circle'}
                 />
                 <div className="flex gap-2 mt-3">
                   <button className="flex-1 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium text-[#111111] hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5">
@@ -560,6 +580,7 @@ export default function LinksPage() {
                 theme={(profile?.theme as any) || 'parchment'}
                 buttonStyle={(profile?.buttonStyle as any) || 'pill'}
                 fontStyle={(profile?.fontStyle as any) || 'dm-sans'}
+                avatarShape={(profile?.avatarShape as any) || 'circle'}
               />
             </div>
           </div>
@@ -614,6 +635,7 @@ export default function LinksPage() {
               theme={(profile?.theme as any) || 'parchment'}
               buttonStyle={(profile?.buttonStyle as any) || 'pill'}
               fontStyle={(profile?.fontStyle as any) || 'dm-sans'}
+              avatarShape={(profile?.avatarShape as any) || 'circle'}
             />
           </div>
         </div>
