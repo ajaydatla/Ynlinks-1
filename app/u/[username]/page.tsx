@@ -238,10 +238,7 @@ function ProfileContent({
         </div>
       )}
 
-      {/* Branding */}
-      <p className={`mt-3 text-center text-[12px] ${currentTheme.subtext}`}>
-        Powered by <span className="text-[#2EE6A6] font-medium">YNLinks</span>
-      </p>
+     
 
       {/* Links */}
       {visibleLinks.length > 0 ? (
@@ -274,6 +271,10 @@ function ProfileContent({
           <p className={`${currentTheme.subtext} text-xs`}>No links yet</p>
         </div>
       )}
+       {/* Branding */}
+      <p className={`mt-6 text-center text-[12px] ${currentTheme.subtext}`}>
+        Powered by <span className="text-[#2EE6A6] font-medium">YNLinks</span>
+      </p>
     </>
   );
 }

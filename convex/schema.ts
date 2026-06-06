@@ -33,9 +33,12 @@ export default defineSchema({
     // Social links
     facebookUrl: v.optional(v.string()),
     instagramUrl: v.optional(v.string()),
+    telegramUrl: v.optional(v.string()),
     linkedinUrl: v.optional(v.string()),
     twitterUrl: v.optional(v.string()),
     youtubeUrl: v.optional(v.string()),
+    // Location
+    location: v.optional(v.string()),
   })
     .index('by_clerk_id', ['clerkId'])
     .index('by_username', ['username'])

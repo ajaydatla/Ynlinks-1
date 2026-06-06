@@ -392,7 +392,7 @@ export default function LinksPage() {
                 className={`mt-5 w-full py-2 rounded-full font-semibold text-base flex items-center justify-center gap-2 transition-all ${
                   links.filter(l => !l.archived).length >= 5
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-[#2EE6A6] text-white hover:bg-[#1FD695] shadow-sm'
+                    : 'bg-[#25d964] text-white hover:bg-[#1FD695] shadow-sm'
                 }`}
               >
                 <Plus size={17} />

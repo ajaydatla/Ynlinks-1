@@ -97,6 +97,8 @@ export const updateUserProfile = mutation({
     avatarShape: v.optional(v.string()),
     username: v.optional(v.string()),
     niche: v.optional(v.string()),
+    location: v.optional(v.string()),
+    telegramUrl: v.optional(v.string()),
     onboardingComplete: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
